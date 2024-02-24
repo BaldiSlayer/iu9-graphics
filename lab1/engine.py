@@ -14,13 +14,13 @@ def drawing_decorator(func):
 
     return drawing_wrapper
 
+
 def key_callback_decorator(func):
     def key_callback_wrapper(self, *args, **kwargs):
         func(self, *args, **kwargs)
         if hasattr(self, 'children'):
             for child in self.children:
                 child.key_callback(self.states)
-
 
     return key_callback_wrapper
 
@@ -32,10 +32,12 @@ class Drawable(ABC):
         cls.children = []
 
     @abstractmethod
+    @drawing_decorator
     def draw(self):
         pass
 
     @abstractmethod
+    @key_callback_decorator
     def key_callback(self):
         pass
 
@@ -65,7 +67,6 @@ class Window(Drawable):
 
         self.draw()
 
-        glfw.poll_events()
 
     @key_callback_decorator
     def key_callback(self, window, key, scancode, action, mods):
@@ -75,7 +76,10 @@ class Window(Drawable):
     def run(self):
         glfw.make_context_current(self.window)
         glfw.set_key_callback(self.window, self.key_callback)
+
         while not glfw.window_should_close(self.window):
             self.display()
+            glfw.poll_events()
+
         glfw.destroy_window(self.window)
         glfw.terminate()
