@@ -1,6 +1,6 @@
 import glfw
 from OpenGL.GL import *
-from engine import drawing_decorator, Drawable, Window
+from engine import drawing_decorator, Drawable, Window, key_callback_decorator
 
 
 class DrawLab1(Drawable):
@@ -68,10 +68,8 @@ class DrawLab1(Drawable):
         self.angle += self.delta * self.stop_rotating
         glfw.swap_buffers(self.window)
 
+    @key_callback_decorator
     def key_callback(self, states):
-        for child in self.children:
-            child.key_callback(self.states)
-
         if states.get(glfw.KEY_MINUS):
             if self.size - self.size_step > self.eps:
                 self.size -= self.size_step

@@ -14,6 +14,16 @@ def drawing_decorator(func):
 
     return drawing_wrapper
 
+def key_callback_decorator(func):
+    def key_callback_wrapper(self, *args, **kwargs):
+        func(self, *args, **kwargs)
+        if hasattr(self, 'children'):
+            for child in self.children:
+                child.key_callback(self.states)
+
+
+    return key_callback_wrapper
+
 
 class Drawable(ABC):
     children: list["Drawable"] = []
@@ -57,12 +67,10 @@ class Window(Drawable):
 
         glfw.poll_events()
 
+    @key_callback_decorator
     def key_callback(self, window, key, scancode, action, mods):
         if action in [0, 1]:
             self.states[key] = action
-
-        for child in self.children:
-            child.key_callback(self.states)
 
     def run(self):
         glfw.make_context_current(self.window)
