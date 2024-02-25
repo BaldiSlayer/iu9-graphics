@@ -80,8 +80,6 @@ class Drawable(ABC):
 
     def add_child(self, child: "Drawable"):
         self.children.append(child)
-        # I don't know
-        # Maybe it is not true for some cases
 
     def move_to(self, x, y, z):
         glTranslate(x, y, z)
