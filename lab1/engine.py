@@ -3,8 +3,17 @@ from OpenGL.GL import *
 from abc import ABC, abstractmethod
 
 
+def get_properties(obj):
+    properties = {}
+    for attribute in dir(obj):
+        if not attribute.startswith('__') and attribute != '_abc_impl' and not callable(getattr(obj, attribute)):
+            properties[attribute] = getattr(obj, attribute)
+    return properties
+
+
 def drawing_decorator(func):
     def drawing_wrapper(self, *args, **kwargs):
+        # print(get_properties(self))
         glPushMatrix()
         func(self, *args, **kwargs)
         if hasattr(self, 'children'):
@@ -27,12 +36,13 @@ def key_callback_decorator(func):
 
 class Drawable(ABC):
     children: list["Drawable"] = []
+    window = None
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls):
         cls.children = []
+        cls.draw = drawing_decorator(cls.draw)
 
     @abstractmethod
-    @drawing_decorator
     def draw(self):
         pass
 
@@ -41,8 +51,11 @@ class Drawable(ABC):
     def key_callback(self):
         pass
 
-    def add_child(self, child):
+    def add_child(self, child: "Drawable"):
         self.children.append(child)
+        # I don't know
+        # Maybe it is not true for some cases
+        child.window = self.window
 
 
 class Window(Drawable):
@@ -56,7 +69,6 @@ class Window(Drawable):
             glfw.terminate()
             return
 
-    @drawing_decorator
     def draw(self):
         pass
 
@@ -66,7 +78,6 @@ class Window(Drawable):
         glClearColor(1.0, 1.0, 1.0, 1.0)
 
         self.draw()
-
 
     @key_callback_decorator
     def key_callback(self, window, key, scancode, action, mods):

@@ -1,6 +1,6 @@
 import glfw
 from OpenGL.GL import *
-from engine import drawing_decorator, Drawable, Window, key_callback_decorator
+from engine import Drawable, Window, key_callback_decorator
 
 
 class DrawLab1(Drawable):
@@ -15,7 +15,6 @@ class DrawLab1(Drawable):
     size_step = 0.1
     eps = 10 ** (-6)
 
-    @drawing_decorator
     def draw(self):
         # Сначала переместим объект к целевой точке
         glTranslate(self.pos_x, self.pos_y, 0)
@@ -94,7 +93,6 @@ class DrawLab1(Drawable):
 def main():
     window = Window(640, 640, 'First lab Lisov')
     lab1_figure = DrawLab1()
-    lab1_figure.window = window.window
     window.add_child(lab1_figure)
     window.run()
 
