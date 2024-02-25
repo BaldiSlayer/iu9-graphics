@@ -25,47 +25,44 @@ class DrawLab1(Drawable):
         # Затем выполним поворот вокруг оси Z
         glRotatef(self.angle, 0, 0, 1)
 
-        # После вращения вернем объект обратно к исходной позиции
-        glTranslate(-self.pos_x, -self.pos_y, 0)
-
         # больший квадрат
         glBegin(GL_POLYGON)
         glColor3f(0.5, 0.4, 0)
-        glVertex2f(self.pos_x + 0.5, self.pos_y + 0.5)
-        glVertex2f(self.pos_x + -0.5, self.pos_y + 0.5)
-        glVertex2f(self.pos_x + -0.5, self.pos_y + -0.5)
-        glVertex2f(self.pos_x + 0.5, self.pos_y + -0.5)
+        glVertex2f(0.5, 0.5)
+        glVertex2f(-0.5, 0.5)
+        glVertex2f(-0.5, -0.5)
+        glVertex2f(0.5, -0.5)
         glEnd()
 
         # рот
         glBegin(GL_POLYGON)
         glColor3f(1, 0.4, 0)
         # верхний правый
-        glVertex2f(self.pos_x + 0.4, self.pos_y - 0.2)
+        glVertex2f(0.4, -0.2)
         # верхний левый
-        glVertex2f(self.pos_x + -0.4, self.pos_y - 0.2)
-        glVertex2f(self.pos_x + -0.4, self.pos_y + -0.37)
-        glVertex2f(self.pos_x + 0.4, self.pos_y + -0.37)
+        glVertex2f(-0.4, -0.2)
+        glVertex2f(-0.4, -0.37)
+        glVertex2f(0.4, -0.37)
         glEnd()
 
         glBegin(GL_POLYGON)
         glColor3f(0, 0.4, 0)
-        glVertex2f(self.pos_x + -0.2, self.pos_y + 0.4)
-        glVertex2f(self.pos_x + -0.4, self.pos_y + 0.4)
-        glVertex2f(self.pos_x + -0.4, self.pos_y + 0.2)
-        glVertex2f(self.pos_x + -0.2, self.pos_y + 0.2)
+        glVertex2f(-0.2, 0.4)
+        glVertex2f(-0.4, 0.4)
+        glVertex2f(-0.4, 0.2)
+        glVertex2f(-0.2, 0.2)
         glEnd()
 
         glBegin(GL_POLYGON)
         glColor3f(0, 0.4, 0)
-        glVertex2f(self.pos_x + 0.2, self.pos_y + 0.4)
-        glVertex2f(self.pos_x + 0.4, self.pos_y + 0.4)
-        glVertex2f(self.pos_x + 0.4, self.pos_y + 0.2)
-        glVertex2f(self.pos_x + 0.2, self.pos_y + 0.2)
+        glVertex2f(0.2, 0.4)
+        glVertex2f(0.4, 0.4)
+        glVertex2f(0.4, 0.2)
+        glVertex2f(0.2, 0.2)
         glEnd()
 
         self.angle += self.delta * self.stop_rotating
-        glfw.swap_buffers(self.window)
+
 
     @key_callback_decorator
     def key_callback(self, states):

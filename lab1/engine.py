@@ -3,7 +3,27 @@ from OpenGL.GL import *
 from abc import ABC, abstractmethod
 
 
-def get_properties(obj):
+class PropertyWrapper:
+    properties = dict()
+
+    def __init__(self, last_, new_):
+        if last_ is not None:
+            self.properties = last_.properties.copy()
+
+        for k, v in new_.items():
+            self.properties[k] = v
+
+    def __getattr__(self, item):
+        if item in self.properties:
+            return self.properties[item]
+        else:
+            raise AttributeError(f"'PropertyWrapper' object has no attribute '{item}'")
+
+    def __repr__(self):
+        return str(self.properties)
+
+
+def get_properties(obj) -> dict:
     properties = {}
     for attribute in dir(obj):
         if not attribute.startswith('__') and attribute != '_abc_impl' and not callable(getattr(obj, attribute)):
@@ -13,12 +33,16 @@ def get_properties(obj):
 
 def drawing_decorator(func):
     def drawing_wrapper(self, *args, **kwargs):
-        # print(get_properties(self))
         glPushMatrix()
         func(self, *args, **kwargs)
+
+        transmitted_values = PropertyWrapper(self.parent_properties, get_properties(self))
+
         if hasattr(self, 'children'):
             for child in self.children:
+                child.parent_properties = transmitted_values
                 child.draw()
+
         glPopMatrix()
 
     return drawing_wrapper
@@ -37,9 +61,11 @@ def key_callback_decorator(func):
 class Drawable(ABC):
     children: list["Drawable"] = []
     window = None
+    parent_properties: PropertyWrapper
 
     def __init_subclass__(cls):
         cls.children = []
+        cls.parent_properties = PropertyWrapper(None, {})
         cls.draw = drawing_decorator(cls.draw)
 
     @abstractmethod
@@ -55,7 +81,6 @@ class Drawable(ABC):
         self.children.append(child)
         # I don't know
         # Maybe it is not true for some cases
-        child.window = self.window
 
 
 class Window(Drawable):
@@ -78,6 +103,8 @@ class Window(Drawable):
         glClearColor(1.0, 1.0, 1.0, 1.0)
 
         self.draw()
+
+        glfw.swap_buffers(self.window)
 
     @key_callback_decorator
     def key_callback(self, window, key, scancode, action, mods):
