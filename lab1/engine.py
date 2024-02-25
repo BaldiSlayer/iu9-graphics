@@ -53,6 +53,7 @@ def key_callback_decorator(func):
         func(self, *args, **kwargs)
         if hasattr(self, 'children'):
             for child in self.children:
+                child.states = self.states
                 child.key_callback(self.states)
 
     return key_callback_wrapper
@@ -81,6 +82,15 @@ class Drawable(ABC):
         self.children.append(child)
         # I don't know
         # Maybe it is not true for some cases
+
+    def move_to(self, x, y, z):
+        glTranslate(x, y, z)
+
+    def scale(self, x, y, z):
+        glScalef(x, y, z)
+
+    def rotate(self, angle, x, y, z):
+        glRotatef(angle, x, y, z)
 
 
 class Window(Drawable):

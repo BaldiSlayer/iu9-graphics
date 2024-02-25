@@ -1,5 +1,4 @@
 import glfw
-from OpenGL.GL import *
 from engine import Drawable, Window, key_callback_decorator, Rectangle
 
 
@@ -17,22 +16,18 @@ class DrawLab1(Drawable):
 
     def draw(self):
         # Сначала переместим объект к целевой точке
-        glTranslate(self.pos_x, self.pos_y, 0)
+        self.move_to(self.pos_x, self.pos_y, 0)
 
         # Изменение размера объекта
-        glScalef(self.size, self.size, 200)
+        self.scale(self.size, self.size, 200)
 
         # Затем выполним поворот вокруг оси Z
-        glRotatef(self.angle, 0, 0, 1)
+        self.rotate(self.angle, 0, 0, 1)
 
         self.angle += self.delta * self.stop_rotating
 
-
     @key_callback_decorator
     def key_callback(self, states):
-        # костыль, прокидывай с помощью своего класса
-        self.states = states
-
         if states.get(glfw.KEY_MINUS):
             if self.size - self.size_step > self.eps:
                 self.size -= self.size_step
