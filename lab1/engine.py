@@ -121,3 +121,29 @@ class Window(Drawable):
 
         glfw.destroy_window(self.window)
         glfw.terminate()
+
+
+class Rectangle(Drawable):
+    x1 = 0
+    y1 = 0
+    x2 = 0
+    y2 = 0
+    color = []
+
+    def __init__(self, x1, y1, x2, y2, color):
+        self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
+        self.color = color
+
+    @abstractmethod
+    def draw(self):
+        glBegin(GL_POLYGON)
+        glColor3f(*self.color)
+        glVertex2f(self.x1, self.y2)
+        glVertex2f(self.x2, self.y2)
+        glVertex2f(self.x2, self.y1)
+        glVertex2f(self.x1, self.y1)
+        glEnd()
+
+    @key_callback_decorator
+    def key_callback(self, states):
+        pass
