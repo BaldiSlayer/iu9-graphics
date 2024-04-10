@@ -56,14 +56,11 @@ def display(window):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glClearColor(0.0, 0.0, 0.0, 0.0)
     glLoadIdentity()
-    # glPushMatrix()
     glMatrixMode(GL_PROJECTION)
     glRotatef(beta * 50.0, 1.0, 0.0, 0.0)
     glRotatef(alpha * 50.0, 0.0, 1.0, 0.0)
 
-    draw_cylinder(0.5, 0.6, segments)
-
-    # glPopMatrix()
+    draw_cylinder(0.5, 1, segments)
 
     glfw.swap_buffers(window)
     glfw.poll_events()
@@ -82,12 +79,12 @@ def key_callback(window, key, scancode, action, mods):
         elif key == glfw.KEY_DOWN:
             beta -= 0.1
         elif key == glfw.KEY_W:
-            segments += 5
+            segments += 1
         elif key == glfw.KEY_S:
-            segments -= 5
+            segments -= 1
+            segments = max(segments, 3)
         elif key == glfw.KEY_ESCAPE:
             glfw.set_window_should_close(window, True)
-
 
 
 if __name__ == "__main__":
