@@ -1,188 +1,228 @@
+import glfw
 from OpenGL.GL import *
-from OpenGL.GLUT import *
-from OpenGL.GLU import *
-import sys
 
-width = 200
-height = 200
-field = [[0] * width] * height
+visible = False
+fillable = False
+testing = False
 
-class Edge:
-    def __init__(self, x_min, x_max, y_min, y_max, dx, dy):
-        self.x_min = x_min
-        self.x_max = x_max
-        self.y_min = y_min
-        self.y_max = y_max
-        self.dx = dx
+EPS = 5
+
+def scale_b(brig):
+    return int(brig * 255)
 
 
-def create_edge_table(vertices):
-    edges = []
+class Lab4:
+    def __init__(self, width, height, title):
+        if not glfw.init():
+            return
 
-    for i in range(len(vertices)):
-        x1, y1 = vertices[i]
-        x2, y2 = vertices[(i + 1) % len(vertices)]
+        self.window = glfw.create_window(width, height, title, None, None)
 
-        if y1 < y2:
-            x_min, y_min = x1, y1
-            x_max, y_max = x2, y2
-        else:
-            x_min, y_min = x2, y2
-            x_max, y_max = x1, y1
+        if not self.window:
+            glfw.terminate()
+            return
 
-        if y1 != y2:
-            dx = (x_max - x_min) / (y_max - y_min)
-            dy = 1 / (y_max - y_min)
+        self.title, self.width, self.height = title, width, height
+        self.field = [0] * (width * height)
+        self.owners = dict()
 
-            edge = Edge((x_min), (x_max), (y_min), (y_max), (dx), (dy))
-            edges.append(edge)
+        if testing:
+            self.figures = [
+                [
+                    [1, 1], [500, 1], [250, 200], [1, 500]
+                ],
+                [
+                    [300, 300], [400, 300], [400, 300], [300, 400]
+                ],
+                [
+                    [10, 20], [30, 300], [250, 300], [300, 30]
+                ],
+            ]
 
-    return sorted(edges, key=lambda edge: (edge.y_min, edge.x_min))
+        glfw.make_context_current(self.window)
+        glfw.set_key_callback(self.window, self.key_callback)
+        glfw.set_mouse_button_callback(self.window, self.mouseCallback)
 
+    def drawFigures(self):
+        self.field = [0] * (self.width * self.height)
+        i = 0
+        for fig in self.figures:
+            self.drawFigure(fig, i)
+            i += 1
 
-def draw_scanline(edges):
-    active_edges = []
-    y = edges[0].y_min
+    def fillFigures(self):
+        #for i in range(self.height):
+        #    for j in range(self.width):
+        #        print(self.field[i * self.width + j], end=' ')
+        #    print()
 
-    while active_edges or edges:
-        if edges:
-            while edges and edges[0].y_min == y:
-                active_edges.append(edges.pop(0))
-            active_edges.sort(key=lambda edge: (edge.y_min, edge.x_min))
+        u = -1
+        for i in range(self.height):
+            if i == u:
+                sadffsadsafd = 0
 
-        scanline = []
+            info = []
+            for elems in range(len(self.figures)):
+                info.append({
+                    'lines': [],
+                    'fill': False,
+                    'start': 0,
+                    'end': 0
+                })
 
-        for edge in active_edges:
-            scanline.append(edge.x_min)
+            startLineIdx = i * self.width
+            for j in range(startLineIdx, startLineIdx + self.width):
+                if self.field[j] == 255:
+                    currentFigure = info[self.owners[(j - startLineIdx, i)]]
+                    if not currentFigure['fill']:
+                        currentFigure['fill'] = True
+                        currentFigure['start'] = j - startLineIdx
+                    else:
+                        currentFigure['end'] = j - startLineIdx - 1
+                        if abs(currentFigure['start'] - currentFigure['end']) > EPS:
+                            currentFigure['fill'] = False
+                            currentFigure['lines'].append([currentFigure['start'], currentFigure['end']])
 
-        scanline.sort()
+            for elem in info:
+                print(elem['lines'], i)
+                for line in elem['lines']:
+                    for j in range(line[0], line[1] + 1):
+                        self.set_pixel(j, i, -1)
 
-        for i in range(0, len(scanline), 2):
-            x1 = round(scanline[i])
-            x2 = round(scanline[i + 1])
-            print(x1, x2)
+    def set_pixel(self, x, y, owner, brightness=255):
+        brightness = min(255, max(0, int(brightness)))
+        if 0 <= x < self.width and 0 <= y < self.height:
+            index = y * self.width + x
+            self.field[index] = brightness
+            self.owners[(x, y)] = owner
 
-            for t in range(x1, x2):
-                draw_point(t, y)
+    def drawFigure(self, figure, ind):
+        #for i in range(len(figure)):
+        #    figure[i] = [figure[i][0], self.height - figure[i][1]]
 
-        y += 1
+        def plot_line_low(x0, y0, x1, y1):
+            dx = x1 - x0
+            dy = y1 - y0
+            yi = 1 if dy > 0 else -1
+            dy = abs(dy)
+            brightness = 1.0
 
-        active_edges = [edge for edge in active_edges if edge.y_max != y]
+            D = 2 * dy - dx
+            y = y0
 
+            for x in range(x0, x1 + 1):
+                self.set_pixel(x, y, ind, scale_b(brightness))
+                if D > 0:
+                    y = y + yi
+                    D = D - 2 * dx
+                D = D + 2 * dy
 
-def draw_point(x, y):
-    const_addable = 1
-    glBegin(GL_LINES)
-    glVertex2f(x, y)
-    glVertex2f(x+const_addable, y+const_addable)
-    glEnd()
+        def plot_line_high(x0, y0, x1, y1):
+            dx = x1 - x0
+            dy = y1 - y0
+            xi = 1 if dx > 0 else -1
+            dx = abs(dx)
+            brightness = 1.0
 
+            D = 2 * dx - dy
+            x = x0
 
-def draw_line(x0, y0, x1, y1):
-    x0 = round(x0)
-    y0 = round(y0)
-    x1 = round(x1)
-    y1 = round(y1)
+            for y in range(y0, y1 + 1):
+                self.set_pixel(x, y, ind, scale_b(brightness))
+                if D > 0:
+                    x = x + xi
+                    D = D - 2 * dy
+                D = D + 2 * dx
 
-    dx = abs(x1 - x0)
-    dy = abs(y1 - y0)
-    sx = 1 if x1 > x0 else -1
-    sy = 1 if y1 > y0 else -1
+        # рисуем линии (границы)
+        # с помощью алгоритма Брезенхема с устранением ступенчатости
+        for i in range(0, len(figure)):
+            x0, y0 = figure[i]
+            x1, y1 = figure[(i + 1) % len(figure)]
 
-    if dy <= dx:
-        m = dx / 2
-        while x0 != x1:
-            glVertex2f(x0, y0)  # Рисуем пиксель
-            m -= dy
-            if m < 0:
-                y0 += sy
-                m += dx
-            x0 += sx
-    else:
-        m = dy / 2
-        while y0 != y1:
-            glVertex2f(x0, y0)  # Рисуем пиксель
-            m -= dx
-            if m < 0:
-                x0 += sx
-                m += dy
-            y0 += sy
-    glVertex2f(x1, y1)
+            if abs(y1 - y0) < abs(x1 - x0):
+                if x0 > x1:
+                    plot_line_low(x1, y1, x0, y0)
+                else:
+                    plot_line_low(x0, y0, x1, y1)
+            else:
+                if y0 > y1:
+                    plot_line_high(x1, y1, x0, y0)
+                else:
+                    plot_line_high(x0, y0, x1, y1)
 
-def draw_polygon(vertices):
-    #glBegin(GL_LINES)
-    for i in range(len(vertices)):
-        x1, y1 = vertices[i]
-        x2, y2 = vertices[(i + 1) % len(vertices)]
+    def run(self):
+        while not glfw.window_should_close(self.window):
+            self.display()
+            glfw.poll_events()
 
-        draw_line(x1, y1, x2, y2)
-    #glEnd()
+        glfw.destroy_window(self.window)
+        glfw.terminate()
 
+    def display(self):
+        glClear(GL_COLOR_BUFFER_BIT)
 
-# целочисленный алгоритм Брезенхема
-def line(x0, y0, x1, y1):
-    x0 = round(x0)
-    y0 = round(y0)
-    x1 = round(x1)
-    y1 = round(y1)
+        if visible:
+            glDrawPixels(self.width, self.height,
+                         GL_BLUE, GL_UNSIGNED_BYTE,
+                         self.field)
 
-    delta_x = abs(x1 - x0)
-    delta_y = abs(y1 - y0)
-    error = 0
-    delta_err = (delta_y + 1)
-    y = y0
-    dir_y = y1 - y0
+        glfw.swap_buffers(self.window)
 
-    if dir_y > 0:
-        dir_y = 1
+    def mouseCallback(self, w, button, action, _):
+        global visible
 
-    if dir_y < 0:
-        dir_y = -1
+        if not visible and not testing:
+            if action == glfw.PRESS and button == glfw.MOUSE_BUTTON_LEFT:
+                x, y = glfw.get_cursor_pos(w)
 
-    for x in range(x0, x1 + 1):
-        draw_point(x, y)
-        error = error + delta_err
+                try:
+                    len(self.figures)
+                except Exception as e:
+                    self.figures = [[]]
 
-        if error >= (delta_x + 1):
-            y = y + dir_y
-            error = error - (delta_x + 1)
+                self.figures[0].append([int(x), self.height - int(y)])
 
+    def key_callback(self, _, key, scancode, action, mods):
+        global visible, EPS
 
-def display():
-    glClear(GL_COLOR_BUFFER_BIT)
+        if action == glfw.PRESS or action == glfw.REPEAT:
+            if key == glfw.KEY_ESCAPE:
+                glfw.set_window_should_close(self.window, True)
+            elif key == glfw.KEY_UP:
+                self.width += 10
+                self.height += 10
+                glfw.set_window_size(self.window, self.width, self.height)
+            elif key == glfw.KEY_DOWN:
+                self.width -= 10
+                self.height -= 10
+                glfw.set_window_size(self.window, self.width, self.height)
+            elif key == glfw.KEY_SPACE:
+                try:
+                    len(self.figures)
+                except Exception as e:
+                    self.figures = [[]]
 
-    glColor3f(1.0, 1.0, 1.0)
+                if len(self.figures[0]) >= 3:
+                    visible = True
+                    self.drawFigures()
+                    # self.fillFigures()
+            elif key == glfw.KEY_ENTER:
+                try:
+                    len(self.figures)
+                except Exception as e:
+                    self.figures = [[]]
 
-    vertices = [(50, 50), (200, 100), (150, 200), (100, 150)]
-    edges = create_edge_table(vertices)
+                if testing:
+                    EPS = 0
 
-    # draw_point(20, 20)
-
-    # line(20, 20, 40, 40)
-
-    # draw_polygon(vertices)
-    draw_scanline(edges)
-
-    glFlush()
-
-
-def init():
-    glClearColor(0.0, 0.0, 0.0, 0.0)
-    gluOrtho2D(0, 300, 0, 300)
-
+                if len(self.figures[0]) >= 3:
+                    visible = True
+                    self.drawFigures()
+                    self.fillFigures()
 
 def main():
-    glutInit(sys.argv)
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB)
-    glutInitWindowSize(width, height)
-    glutInitWindowPosition(100, 100)
-    glutCreateWindow(b"Lisov lab 4")
-
-    glutDisplayFunc(display)
-
-    init()
-
-    glutMainLoop()
+    Lab4(800, 800, "Lab 4").run()
 
 
 if __name__ == "__main__":
